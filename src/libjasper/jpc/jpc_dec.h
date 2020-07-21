@@ -471,6 +471,9 @@ typedef struct {
 	/* The TSFB. */
 	jpc_tsfb_t *tsfb;
 
+	/* COC param of transformation for each component */
+	int coc_transformation;
+
 } jpc_dec_tcomp_t;
 
 /*
