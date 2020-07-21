@@ -1954,6 +1954,8 @@ static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 	int i;
 	int j;
 	int t;
+	// a reconstruction parameter defined in E 1.1.2 of the ISO/IEC 15444-1
+	jpc_fix_t recparam = JPC_FIX_HALF;
 
 	assert(absstepsize >= 0);
 	if (absstepsize == jpc_inttofix(1)) {
@@ -1964,6 +1966,8 @@ static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 		for (j = 0; j < jas_matrix_numcols(x); ++j) {
 			t = jas_matrix_get(x, i, j);
 			if (t) {
+				// mid-point reconstruction
+				t = (t > 0) ? jpc_fix_add(t, recparam) : jpc_fix_sub(t, recparam);
 				t = jpc_fix_mul(t, absstepsize);
 			} else {
 				t = 0;
