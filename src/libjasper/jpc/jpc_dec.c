@@ -1237,7 +1237,8 @@ static int jpc_dec_process_eoc(jpc_dec_t *dec, jpc_ms_t *ms)
 
 	for (tileno = 0, tile = dec->tiles; tileno < dec->numtiles; ++tileno,
 	  ++tile) {
-		if (tile->state == JPC_TILE_ACTIVE) {
+		if (tile->state == JPC_TILE_ACTIVE ||
+			tile->state == JPC_TILE_ACTIVELAST) {
 			if (jpc_dec_tiledecode(dec, tile)) {
 				return -1;
 			}
