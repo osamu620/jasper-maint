@@ -161,7 +161,7 @@ jas_image_t *mif_decode(jas_stream_t *in, const char *optstr)
 	int bias;
 
 	/* Avoid warnings about unused parameters. */
-	optstr = 0;
+	(void)optstr;
 
 	hdr = 0;
 	image = 0;
@@ -672,6 +672,8 @@ static int mif_hdr_put(mif_hdr_t *hdr, jas_stream_t *out)
 static int mif_hdr_addcmpt(mif_hdr_t *hdr, int cmptno, mif_cmpt_t *cmpt)
 {
 	assert(cmptno >= hdr->numcmpts);
+	(void)cmptno;
+
 	if (hdr->numcmpts >= hdr->maxcmpts) {
 		if (mif_hdr_growcmpts(hdr, hdr->numcmpts + 128)) {
 			return -1;

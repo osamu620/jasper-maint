@@ -365,6 +365,10 @@ error:
    int, 32 bit) */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+#elif defined(__GNUC__)
+#pragma GCC diagnostic push
+/* on GCC, it's this warning: */
+#pragma GCC diagnostic ignored "-Wtype-limits"
 #endif
 
 static jas_image_t *jpg_mkimage(j_decompress_ptr cinfo)
@@ -422,7 +426,7 @@ error:
 	return 0;
 }
 
-#ifdef __clang__
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
 
@@ -452,7 +456,7 @@ static int jpg_copystreamtofile(FILE *out, jas_stream_t *in)
 static void jpg_start_output(j_decompress_ptr cinfo, jpg_dest_t *dinfo)
 {
 	/* Avoid compiler warnings about unused parameters. */
-	cinfo = 0;
+	(void)cinfo;
 
 	JAS_DBGLOG(10, ("jpg_start_output(%p, %p)\n", cinfo, dinfo));
 
@@ -473,7 +477,7 @@ static void jpg_put_pixel_rows(j_decompress_ptr cinfo, jpg_dest_t *dinfo,
 		return;
 	}
 
-	assert(cinfo->output_components == jas_image_numcmpts(dinfo->image));
+	assert(cinfo->output_components == (int)jas_image_numcmpts(dinfo->image));
 
 	for (cmptno = 0; cmptno < cinfo->output_components; ++cmptno) {
 		width = jas_image_cmptwidth(dinfo->image, cmptno);
@@ -498,6 +502,6 @@ static void jpg_finish_output(j_decompress_ptr cinfo, jpg_dest_t *dinfo)
 	JAS_DBGLOG(10, ("jpg_finish_output(%p, %p)\n", cinfo, dinfo));
 
 	/* Avoid compiler warnings about unused parameters. */
-	cinfo = 0;
-	dinfo = 0;
+	(void)cinfo;
+	(void)dinfo;
 }

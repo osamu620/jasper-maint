@@ -458,6 +458,8 @@ static int jpc_dec_process_crg(jpc_dec_t *dec, jpc_ms_t *ms)
 		cmpt->hsubstep = crg->comps[cmptno].hoff;
 		cmpt->vsubstep = crg->comps[cmptno].voff;
 		*/
+		/* suppress -Wunused-but-set-variable */
+		(void)crg;
 	}
 	return 0;
 }
@@ -465,7 +467,7 @@ static int jpc_dec_process_crg(jpc_dec_t *dec, jpc_ms_t *ms)
 static int jpc_dec_process_soc(jpc_dec_t *dec, jpc_ms_t *ms)
 {
 	/* Eliminate warnings about unused variables. */
-	ms = 0;
+	(void)ms;
 
 	/* We should expect to encounter a SIZ marker segment next. */
 	dec->state = JPC_MHSIZ;
@@ -580,7 +582,7 @@ static int jpc_dec_process_sod(jpc_dec_t *dec, jpc_ms_t *ms)
 	int pos;
 
 	/* Eliminate compiler warnings about unused variables. */
-	ms = 0;
+	(void)ms;
 
 	if (!(tile = dec->curtile)) {
 		return -1;
@@ -696,7 +698,6 @@ static int jpc_dec_tileinit(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 	uint_fast32_t tlcbgxstart;
 	uint_fast32_t tlcbgystart;
 	uint_fast32_t brcbgxend;
-	uint_fast32_t brcbgyend;
 	uint_fast32_t cbgxstart;
 	uint_fast32_t cbgystart;
 	uint_fast32_t cbgxend;
@@ -804,14 +805,12 @@ static int jpc_dec_tileinit(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 				tlcbgxstart = tlprcxstart;
 				tlcbgystart = tlprcystart;
 				brcbgxend = brprcxend;
-				brcbgyend = brprcyend;
 				rlvl->cbgwidthexpn = rlvl->prcwidthexpn;
 				rlvl->cbgheightexpn = rlvl->prcheightexpn;
 			} else {
 				tlcbgxstart = JPC_CEILDIVPOW2(tlprcxstart, 1);
 				tlcbgystart = JPC_CEILDIVPOW2(tlprcystart, 1);
 				brcbgxend = JPC_CEILDIVPOW2(brprcxend, 1);
-				brcbgyend = JPC_CEILDIVPOW2(brprcyend, 1);
 				rlvl->cbgwidthexpn = rlvl->prcwidthexpn - 1;
 				rlvl->cbgheightexpn = rlvl->prcheightexpn - 1;
 				if (rlvl->cbgwidthexpn < 0 || rlvl->cbgheightexpn < 0) {
@@ -1095,8 +1094,6 @@ static int jpc_dec_tilefini(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 
 static int jpc_dec_tiledecode(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 {
-	int i;
-	int j;
 	jpc_dec_tcomp_t *tcomp;
 	jpc_dec_rlvl_t *rlvl;
 	jpc_dec_band_t *band;
@@ -1178,8 +1175,8 @@ static int jpc_dec_tiledecode(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 	for (compno = 0, tcomp = tile->tcomps; compno < dec->numcomps;
 		  ++compno, ++tcomp) {
 		if (tcomp->coc_transformation == 0) {
-			for (i = 0; i < jas_matrix_numrows(tcomp->data); ++i) {
-				for (j = 0; j < jas_matrix_numcols(tcomp->data); ++j) {
+			for (jas_matind_t i = 0; i < jas_matrix_numrows(tcomp->data); ++i) {
+				for (jas_matind_t j = 0; j < jas_matrix_numcols(tcomp->data); ++j) {
 					v = jas_matrix_get(tcomp->data, i, j);
 					v = jpc_fix_round(v);
 					jas_matrix_set(tcomp->data, i, j, jpc_fixtoint(v));
@@ -1192,8 +1189,8 @@ static int jpc_dec_tiledecode(jpc_dec_t *dec, jpc_dec_tile_t *tile)
 	for (compno = 0, tcomp = tile->tcomps, cmpt = dec->cmpts; compno <
 	  dec->numcomps; ++compno, ++tcomp, ++cmpt) {
 		adjust = cmpt->sgnd ? 0 : (1 << (cmpt->prec - 1));
-		for (i = 0; i < jas_matrix_numrows(tcomp->data); ++i) {
-			for (j = 0; j < jas_matrix_numcols(tcomp->data); ++j) {
+		for (jas_matind_t i = 0; i < jas_matrix_numrows(tcomp->data); ++i) {
+			for (jas_matind_t j = 0; j < jas_matrix_numcols(tcomp->data); ++j) {
 				*jas_matrix_getref(tcomp->data, i, j) += adjust;
 			}
 		}
@@ -1233,7 +1230,7 @@ static int jpc_dec_process_eoc(jpc_dec_t *dec, jpc_ms_t *ms)
 	jpc_dec_tile_t *tile;
 
 	/* Eliminate compiler warnings about unused variables. */
-	ms = 0;
+	(void)ms;
 
 	for (tileno = 0, tile = dec->tiles; tileno < dec->numtiles; ++tileno,
 	  ++tile) {
@@ -1620,8 +1617,8 @@ static int jpc_dec_process_ppt(jpc_dec_t *dec, jpc_ms_t *ms)
 static int jpc_dec_process_com(jpc_dec_t *dec, jpc_ms_t *ms)
 {
 	/* Eliminate compiler warnings about unused variables. */
-	dec = 0;
-	ms = 0;
+	(void)dec;
+	(void)ms;
 
 	return 0;
 }
@@ -1629,7 +1626,7 @@ static int jpc_dec_process_com(jpc_dec_t *dec, jpc_ms_t *ms)
 static int jpc_dec_process_unk(jpc_dec_t *dec, jpc_ms_t *ms)
 {
 	/* Eliminate compiler warnings about unused variables. */
-	dec = 0;
+	(void)dec;
 
 	jas_eprintf("warning: ignoring unknown marker segment (0x%x)\n",
 	  ms->id);
@@ -1832,7 +1829,7 @@ static int jpc_dec_cp_setfromcox(jpc_dec_cp_t *cp, jpc_dec_ccp_t *ccp,
 	int rlvlno;
 
 	/* Eliminate compiler warnings about unused variables. */
-	cp = 0;
+	(void)cp;
 
 	if ((flags & JPC_COC) || !(ccp->flags & JPC_COC)) {
 		ccp->numrlvls = compparms->numdlvls + 1;
@@ -1877,7 +1874,7 @@ static int jpc_dec_cp_setfromqcx(jpc_dec_cp_t *cp, jpc_dec_ccp_t *ccp,
 	int bandno;
 
 	/* Eliminate compiler warnings about unused variables. */
-	cp = 0;
+	(void)cp;
 
 	if ((flags & JPC_QCC) || !(ccp->flags & JPC_QCC)) {
 		ccp->flags |= flags | JPC_QSET;
@@ -1951,9 +1948,6 @@ static jpc_fix_t jpc_calcabsstepsize(int stepsize, int numbits)
 
 static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 {
-	int i;
-	int j;
-	int t;
 	// a reconstruction parameter defined in E 1.1.2 of the ISO/IEC 15444-1
 	jpc_fix_t recparam = JPC_FIX_HALF;
 
@@ -1962,9 +1956,9 @@ static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 		return;
 	}
 
-	for (i = 0; i < jas_matrix_numrows(x); ++i) {
-		for (j = 0; j < jas_matrix_numcols(x); ++j) {
-			t = jas_matrix_get(x, i, j);
+	for (jas_matind_t i = 0; i < jas_matrix_numrows(x); ++i) {
+		for (jas_matind_t j = 0; j < jas_matrix_numcols(x); ++j) {
+			jas_seqent_t t = jas_matrix_get(x, i, j);
 			if (t) {
 				// mid-point reconstruction
 				t = (t > 0) ? jpc_fix_add(t, recparam) : jpc_fix_sub(t, recparam);
@@ -1980,8 +1974,6 @@ static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 
 static void jpc_undo_roi(jas_matrix_t *x, int roishift, int bgshift, int numbps)
 {
-	int i;
-	int j;
 	int thresh;
 	jpc_fix_t val;
 	jpc_fix_t mag;
@@ -2001,8 +1993,8 @@ static void jpc_undo_roi(jas_matrix_t *x, int roishift, int bgshift, int numbps)
 	thresh = 1 << roishift;
 
 	warn = false;
-	for (i = 0; i < jas_matrix_numrows(x); ++i) {
-		for (j = 0; j < jas_matrix_numcols(x); ++j) {
+	for (jas_matind_t i = 0; i < jas_matrix_numrows(x); ++i) {
+		for (jas_matind_t j = 0; j < jas_matrix_numcols(x); ++j) {
 			val = jas_matrix_get(x, i, j);
 			mag = JAS_ABS(val);
 			if (mag >= thresh) {
@@ -2222,7 +2214,7 @@ static int jpc_dec_dump(jpc_dec_t *dec, FILE *out)
 						assert(!band->prcs);
 						continue;
 					}
-					fprintf(out, "xs = %"PRIiFAST32", ys = %"PRIiFAST32", xe = %"PRIiFAST32", ye = %"PRIiFAST32", w = %"PRIiFAST32", h = %"PRIiFAST32"\n",
+					fprintf(out, "xs = %"PRIjas_seqent", ys = %"PRIjas_seqent", xe = %"PRIjas_seqent", ye = %"PRIjas_seqent", w = %"PRIjas_seqent", h = %"PRIjas_seqent"\n",
 					  jas_seq2d_xstart(band->data),
 					  jas_seq2d_ystart(band->data),
 					  jas_seq2d_xend(band->data),
@@ -2245,7 +2237,7 @@ static int jpc_dec_dump(jpc_dec_t *dec, FILE *out)
 						  prc->numcblks; ++cblkno,
 						  ++cblk) {
 							fprintf(out, "CODE BLOCK %d\n", cblkno);
-							fprintf(out, "xs = %"PRIiFAST32", ys = %"PRIiFAST32", xe = %"PRIiFAST32", ye = %"PRIiFAST32", w = %"PRIiFAST32", h = %"PRIiFAST32"\n",
+							fprintf(out, "xs = %"PRIjas_seqent", ys = %"PRIjas_seqent", xe = %"PRIjas_seqent", ye = %"PRIjas_seqent", w = %"PRIjas_seqent", h = %"PRIjas_seqent"\n",
 							  jas_seq2d_xstart(cblk->data),
 							  jas_seq2d_ystart(cblk->data),
 							  jas_seq2d_xend(cblk->data),

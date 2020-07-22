@@ -144,7 +144,6 @@ static void jpc_enc_dump(jpc_enc_t *enc);
 * Local prototypes.
 \******************************************************************************/
 
-static int dump_passes(jpc_enc_pass_t *passes, int numpasses, jpc_enc_cblk_t *cblk);
 static void calcrdslopes(jpc_enc_cblk_t *cblk);
 static void dump_layeringinfo(jpc_enc_t *enc);
 static void jpc_quantize(jas_matrix_t *data, jpc_fix_t stepsize);
@@ -157,7 +156,6 @@ static int jpc_enc_encodemainhdr(jpc_enc_t *enc);
 static int jpc_enc_encodemainbody(jpc_enc_t *enc);
 static int jpc_enc_encodetiledata(jpc_enc_t *enc);
 static int rateallocate(jpc_enc_t *enc, unsigned numlyrs, uint_fast32_t *cumlens);
-static int setins(int numvalues, jpc_flt_t *values, jpc_flt_t value);
 static jpc_enc_cp_t *cp_create(const char *optstr, jas_image_t *image);
 static void jpc_enc_cp_destroy(jpc_enc_cp_t *cp);
 static uint_fast32_t jpc_abstorelstepsize(jpc_fix_t absdelta, int scaleexpn);
@@ -360,7 +358,6 @@ static jpc_enc_cp_t *cp_create(const char *optstr, jas_image_t *image)
 	jpc_enc_tcp_t *tcp;
 	jpc_enc_tccp_t *tccp;
 	jpc_enc_ccp_t *ccp;
-	int cmptno;
 	uint_fast16_t rlvlno;
 	uint_fast16_t prcwidthexpn;
 	uint_fast16_t prcheightexpn;
@@ -399,7 +396,7 @@ static jpc_enc_cp_t *cp_create(const char *optstr, jas_image_t *image)
 
 	hsteplcm = 1;
 	vsteplcm = 1;
-	for (cmptno = 0; cmptno < jas_image_numcmpts(image); ++cmptno) {
+	for (unsigned cmptno = 0; cmptno < jas_image_numcmpts(image); ++cmptno) {
 		if (jas_image_cmptbrx(image, cmptno) + jas_image_cmpthstep(image, cmptno) <=
 		  jas_image_brx(image) || jas_image_cmptbry(image, cmptno) +
 		  jas_image_cmptvstep(image, cmptno) <= jas_image_bry(image)) {
@@ -414,7 +411,8 @@ static jpc_enc_cp_t *cp_create(const char *optstr, jas_image_t *image)
 	if (!(cp->ccps = jas_alloc2(cp->numcmpts, sizeof(jpc_enc_ccp_t)))) {
 		goto error;
 	}
-	for (cmptno = 0, ccp = cp->ccps; cmptno < JAS_CAST(int, cp->numcmpts); ++cmptno,
+	unsigned cmptno;
+	for (cmptno = 0, ccp = cp->ccps; cmptno < cp->numcmpts; ++cmptno,
 	  ++ccp) {
 		ccp->sampgrdstepx = jas_image_cmpthstep(image, cmptno);
 		ccp->sampgrdstepy = jas_image_cmptvstep(image, cmptno);
@@ -888,7 +886,6 @@ long mainhdrlen;
 	jpc_enc_tccp_t *tccp;
 	uint_fast16_t cmptno;
 	jpc_tsfb_band_t bandinfos[JPC_MAXBANDS];
-	jpc_fix_t mctsynweight;
 	jpc_enc_tcp_t *tcp;
 	jpc_tsfb_t *tsfb;
 	jpc_tsfb_band_t *bandinfo;
@@ -986,7 +983,6 @@ startoff = jas_stream_getrwcount(enc->out);
 		jpc_tsfb_getbands(tsfb, 0, 0, 1 << tccp->maxrlvls, 1 << tccp->maxrlvls,
 		  bandinfos);
 		jpc_tsfb_destroy(tsfb);
-		mctsynweight = jpc_mct_getsynweight(tcp->mctid, cmptno);
 		numbands = 3 * tccp->maxrlvls - 2;
 		for (bandno = 0, bandinfo = bandinfos; bandno < numbands;
 		  ++bandno, ++bandinfo) {
@@ -1098,8 +1094,6 @@ startoff = jas_stream_getrwcount(enc->out);
 static int jpc_enc_encodemainbody(jpc_enc_t *enc)
 {
 	int tileno;
-	int tilex;
-	int tiley;
 	jpc_sot_t *sot;
 	jpc_enc_tcmpt_t *comp;
 	jpc_enc_tcmpt_t *endcomps;
@@ -1110,9 +1104,7 @@ static int jpc_enc_encodemainbody(jpc_enc_t *enc)
 	jpc_qcc_t *qcc;
 	jpc_cod_t *cod;
 	int adjust;
-	int j;
 	int absbandno;
-	long numbytes;
 	long tilehdrlen;
 	long tilelen;
 	jpc_enc_tile_t *tile;
@@ -1123,8 +1115,6 @@ static int jpc_enc_encodemainbody(jpc_enc_t *enc)
 	jpc_enc_ccp_t *ccps;
 	jpc_enc_tccp_t *tccp;
 	int bandno;
-	uint_fast32_t x;
-	uint_fast32_t y;
 	int mingbits;
 	int actualnumbps;
 	jpc_fix_t mxmag;
@@ -1133,13 +1123,7 @@ static int jpc_enc_encodemainbody(jpc_enc_t *enc)
 
 	cp = enc->cp;
 
-	/* Avoid compile warnings. */
-	numbytes = 0;
-
 	for (tileno = 0; tileno < JAS_CAST(int, cp->numtiles); ++tileno) {
-		tilex = tileno % cp->numhtiles;
-		tiley = tileno / cp->numhtiles;
-
 		if (!(enc->curtile = jpc_enc_tile_create(enc->cp, enc->image,
 		  tileno))) {
 			jas_eprintf("cannot create tile\n");
@@ -1156,8 +1140,8 @@ static int jpc_enc_encodemainbody(jpc_enc_t *enc)
 		for (cmptno = 0, comp = tile->tcmpts; cmptno < tile->numtcmpts; ++cmptno, ++comp) {
 			if (!cp->ccps[cmptno].sgnd) {
 				adjust = 1 << (cp->ccps[cmptno].prec - 1);
-				for (unsigned i = 0; i < jas_matrix_numrows(comp->data); ++i) {
-					for (j = 0; j < jas_matrix_numcols(comp->data); ++j) {
+				for (jas_matind_t i = 0; i < jas_matrix_numrows(comp->data); ++i) {
+					for (jas_matind_t j = 0; j < jas_matrix_numcols(comp->data); ++j) {
 						*jas_matrix_getref(comp->data, i, j) -= adjust;
 					}
 				}
@@ -1186,7 +1170,7 @@ assert(jas_image_numcmpts(enc->image) == 3);
 			break;
 		}
 
-		for (int i = 0; i < jas_image_numcmpts(enc->image); ++i) {
+		for (unsigned  i = 0; i < jas_image_numcmpts(enc->image); ++i) {
 			comp = &tile->tcmpts[i];
 			jpc_tsfb_analyze(comp->tsfb, comp->data);
 
@@ -1215,8 +1199,8 @@ assert(jas_image_numcmpts(enc->image) == 3);
 					}
 					actualnumbps = 0;
 					mxmag = 0;
-					for (y = 0; y < JAS_CAST(uint_fast32_t, jas_matrix_numrows(band->data)); ++y) {
-						for (x = 0; x < JAS_CAST(uint_fast32_t, jas_matrix_numcols(band->data)); ++x) {
+					for (jas_matind_t y = 0; y < jas_matrix_numrows(band->data); ++y) {
+						for (jas_matind_t x = 0; x < jas_matrix_numcols(band->data); ++x) {
 							mag = JAS_ABS(jas_matrix_get(band->data, y, x));
 							if (mag > mxmag) {
 								mxmag = mag;
@@ -1481,39 +1465,16 @@ assert(enc->tmpstream);
 	return 0;
 }
 
-int dump_passes(jpc_enc_pass_t *passes, int numpasses, jpc_enc_cblk_t *cblk)
-{
-	jpc_enc_pass_t *pass;
-	int i;
-	jas_stream_memobj_t *smo;
-
-	smo = cblk->stream->obj_;
-
-	pass = passes;
-	for (i = 0; i < numpasses; ++i) {
-		jas_eprintf("start=%d end=%d type=%d term=%d lyrno=%d firstchar=%02x size=%ld pos=%ld\n",
-		  (int)pass->start, (int)pass->end, (int)pass->type, (int)pass->term, (int)pass->lyrno,
-		  smo->buf_[pass->start], (long)smo->len_, (long)smo->pos_);
-#if 0
-		jas_memdump(stderr, &smo->buf_[pass->start], pass->end - pass->start);
-#endif
-		++pass;
-	}
-	return 0;
-}
-
 void jpc_quantize(jas_matrix_t *data, jpc_fix_t stepsize)
 {
-	int i;
-	int j;
 	jpc_fix_t t;
 
 	if (stepsize == jpc_inttofix(1)) {
 		return;
 	}
 
-	for (i = 0; i < jas_matrix_numrows(data); ++i) {
-		for (j = 0; j < jas_matrix_numcols(data); ++j) {
+	for (jas_matind_t i = 0; i < jas_matrix_numrows(data); ++i) {
+		for (jas_matind_t j = 0; j < jas_matrix_numcols(data); ++j) {
 			t = jas_matrix_get(data, i, j);
 
 {

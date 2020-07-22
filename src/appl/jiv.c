@@ -105,7 +105,9 @@ typedef struct {
 
 	int verbose;
 
+#if defined(JAS_DEFAULT_MAX_MEM_USAGE)
 	size_t max_mem;
+#endif
 
 } cmdopts_t;
 
@@ -147,7 +149,7 @@ typedef struct {
 
 	int monomode;
 
-	int cmptno;
+	unsigned cmptno;
 
 } gs_t;
 
@@ -168,7 +170,7 @@ static void nextcmpt(void);
 static void prevcmpt(void);
 static int loadimage(void);
 static void unloadimage(void);
-static int jas_image_render2(jas_image_t *image, int cmptno, float vtlx, float vtly,
+static int jas_image_render2(jas_image_t *image, unsigned cmptno, float vtlx, float vtly,
   float vsx, float vsy, int vw, int vh, GLshort *vdata);
 static int jas_image_render(jas_image_t *image, float vtlx, float vtly,
   float vsx, float vsy, int vw, int vh, GLshort *vdata);
@@ -262,7 +264,9 @@ int main(int argc, char **argv)
 			cmdopts.verbose = 1;
 			break;
 		case 'm':
+#if defined(JAS_DEFAULT_MAX_MEM_USAGE)
 			cmdopts.max_mem = strtoull(jas_optarg, 0, 10);
+#endif
 			break;
 		case 'V':
 			printf("%s\n", JAS_VERSION);
@@ -924,7 +928,7 @@ error:
 	return -1;
 }
 
-static int jas_image_render2(jas_image_t *image, int cmptno, float vtlx,
+static int jas_image_render2(jas_image_t *image, unsigned cmptno, float vtlx,
   float vtly, float vsx, float vsy, int vw, int vh, GLshort *vdata)
 {
 	int i;
@@ -934,7 +938,7 @@ static int jas_image_render2(jas_image_t *image, int cmptno, float vtlx,
 	int v;
 	GLshort *vdatap;
 
-	if (cmptno < 0 || cmptno >= image->numcmpts_) {
+	if (cmptno >= image->numcmpts_) {
 		fprintf(stderr, "bad parameter\n");
 		goto error;
 	}
@@ -972,6 +976,8 @@ static void render()
 	if (cmdopts.verbose) {
 //		fprintf(stderr, "vtlx=%f, vtly=%f, vsx=%f, vsy=%f\n",
 //		  vtlx, vtly, gs.sx, gs.sy);
+		/* suppress -Wunused-but-set-variable */
+		(void)vtlx; (void)vtly;
 	}
 
 	if (gs.monomode) {
