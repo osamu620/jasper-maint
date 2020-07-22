@@ -1963,8 +1963,6 @@ static void jpc_dequantize(jas_matrix_t *x, jpc_fix_t absstepsize)
 				// mid-point reconstruction
 				t = (t > 0) ? jpc_fix_add(t, recparam) : jpc_fix_sub(t, recparam);
 				t = jpc_fix_mul(t, absstepsize);
-			} else {
-				t = 0;
 			}
 			jas_matrix_set(x, i, j, t);
 		}
